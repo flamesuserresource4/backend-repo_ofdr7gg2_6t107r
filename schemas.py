@@ -7,42 +7,52 @@ These schemas are used for data validation in your application.
 Each Pydantic model represents a collection in your database.
 Model name is converted to lowercase for the collection name:
 - User -> "user" collection
-- Product -> "product" collection
-- BlogPost -> "blogs" collection
+- LeadJob -> "leadjob" collection
+- Lead -> "lead" collection
 """
 
-from pydantic import BaseModel, Field
-from typing import Optional
+from pydantic import BaseModel, Field, EmailStr
+from typing import Optional, List
 
-# Example schemas (replace with your own):
 
 class User(BaseModel):
     """
     Users collection schema
     Collection name: "user" (lowercase of class name)
     """
-    name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
+    name: Optional[str] = Field(None, description="Full name")
+    email: EmailStr = Field(..., description="Email address")
+    password_hash: Optional[str] = Field(None, description="Hashed password (if email/password signup)")
+    auth_provider: str = Field("password", description="Auth provider: password | google")
     is_active: bool = Field(True, description="Whether user is active")
 
-class Product(BaseModel):
-    """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
-    """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
 
-# Add your own schemas here:
-# --------------------------------------------------
+class LeadJob(BaseModel):
+    """
+    Lead generation job request
+    Collection name: "leadjob"
+    """
+    user_id: Optional[str] = Field(None, description="User ID who requested the job")
+    location: str = Field(..., description="Target location")
+    job_title: str = Field(..., description="Target job title")
+    company_size_range: str = Field(..., description="Company size range, e.g., 11-50, 51-200")
+    industry_keywords: List[str] = Field(..., description="List of industry keywords")
+    status: str = Field("processing", description="Job status: processing | ready | failed")
+    result_count: int = Field(0, description="Number of leads generated")
 
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+
+class Lead(BaseModel):
+    """
+    Leads collection schema
+    Collection name: "lead"
+    """
+    job_id: str = Field(..., description="Associated LeadJob ID")
+    name: str = Field(..., description="Contact name")
+    email: Optional[EmailStr] = Field(None, description="Email address")
+    phone: Optional[str] = Field(None, description="Phone number")
+    linkedin: Optional[str] = Field(None, description="LinkedIn URL")
+    company: str = Field(..., description="Company name")
+    title: str = Field(..., description="Job title")
+    location: str = Field(..., description="Location")
+    company_size: str = Field(..., description="Company size bucket")
+    industry: Optional[str] = Field(None, description="Industry or keyword match")
